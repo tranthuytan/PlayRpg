@@ -11,23 +11,40 @@ public class ItemsController : ControllerBase
 {
 
     private readonly IRepository<Item> _itemRepository;
+    private static int requestCounter = 0;
     public ItemsController(IRepository<Item> itemRepository)
     {
         _itemRepository = itemRepository;
     }
 
     [HttpGet]
-    public async Task<IEnumerable<ItemDto>> GetAllAsync()
+    public async Task<ActionResult<IEnumerable<ItemDto>>> GetAllAsync()
     {
+        requestCounter++;
+        Console.WriteLine($"request no.{requestCounter}: Starting ...");
+
+        if (requestCounter <= 2)
+        {
+            Console.WriteLine($"Request {requestCounter}: Delaying ...");
+            await Task.Delay(TimeSpan.FromSeconds(10));
+        }
+        if (requestCounter <= 4)
+        {
+            Console.WriteLine($"Request {requestCounter}: 500 (Internal Server Error)");
+            return StatusCode(500);
+        }
+
         var items = (await _itemRepository.GetAllAsync())
                     .Select(i => i.ToDto());
-        return items;
+        Console.WriteLine($"Request {requestCounter}: 200 (Ok)");
+        return Ok(items);
     }
     [HttpGet("{id}")]
     public async Task<IActionResult> GetByIdAsync(Guid id)
     {
         var item = await _itemRepository.GetByIdAsync(id);
-        if (item == null) {
+        if (item == null)
+        {
             return NotFound();
         }
         return Ok(item.ToDto());

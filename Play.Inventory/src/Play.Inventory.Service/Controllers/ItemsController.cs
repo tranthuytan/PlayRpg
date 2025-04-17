@@ -18,7 +18,7 @@ namespace Play.Inventory.Service.Controllers
             _catalogClient = catalogClient;
         }
 
-        [HttpGet("{userId}")]
+        [HttpGet]
         public async Task<ActionResult<IEnumerable<InventoryItemDto>>> GetAsync(Guid userId)
         {
             if (userId == Guid.Empty)
