@@ -1,11 +1,24 @@
+using System.Reflection;
+using MassTransit;
 using Play.Catalog.Service.Entities;
 using Play.Common.Extensions;
+using Play.Common.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+// builder.Services.Configure<ServiceSettings>(builder.Configuration.GetSection(nameof(ServiceSettings)));
+// builder.Services.AddTransient(sp => sp.GetRequiredService<IOptions<ServiceSettings>>().Value);
+
+// builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection(nameof(RabbitMQSettings)));
+// builder.Services.AddTransient(sp => sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value);
+
 builder.Services.AddMongo()
-                .AddRepositories<Item>("items");
+                .AddRepositories<Item>("items")
+                .AddMassTransitWithRabbitMQ();
+
+// builder.Services.AddMassTransitHostedService();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

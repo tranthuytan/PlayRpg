@@ -10,12 +10,13 @@ namespace Play.Inventory.Service.Controllers
     public class ItemsController : ControllerBase
     {
         private readonly IRepository<InventoryItem> _itemRepository;
-        private readonly CatalogClient _catalogClient;
+        // change from CatalogClient to IRepository<CatalogItem> after the rabbitMq consumer work
+        private readonly IRepository<CatalogItem> _catalogRepository;
         public ItemsController(IRepository<InventoryItem> itemRepository,
-                                CatalogClient catalogClient)
+                                IRepository<CatalogItem> catalogClient)
         {
             _itemRepository = itemRepository;
-            _catalogClient = catalogClient;
+            _catalogRepository = catalogClient;
         }
 
         [HttpGet]
@@ -25,11 +26,14 @@ namespace Play.Inventory.Service.Controllers
             {
                 return BadRequest();
             }
-            var catalogItems = await _catalogClient.GetCatalogItemsAsync();
-            var inventoryItemsEntity = await _itemRepository.GetAllAsync(i => i.UserId == userId);
-            var inventoryItemsDto = inventoryItemsEntity.Select(inventoryItem =>
+            var inventoryItemEntities = await _itemRepository.GetAllAsync(i => i.UserId == userId);
+
+            var itemIds = inventoryItemEntities.Select(x => x.CatalogItemId);
+            var catalogItemEntities = await _catalogRepository.GetAllAsync(c => itemIds.Contains(c.Id));
+
+            var inventoryItemsDto = inventoryItemEntities.Select(inventoryItem =>
             {
-                var catalogItem = catalogItems.Single(catalog => catalog.Id == inventoryItem.CatalogItemId);
+                var catalogItem = catalogItemEntities.Single(catalog => catalog.Id == inventoryItem.CatalogItemId);
                 return inventoryItem.AsDto(catalogItem.Name, catalogItem.Description);
             });
             return Ok(inventoryItemsDto);
